@@ -8,6 +8,7 @@
 - vlc
 - flameshot
 - ZSH（OH-MY-ZSH）
+- fonts-powerline
 
 ## 其他软件：
 
