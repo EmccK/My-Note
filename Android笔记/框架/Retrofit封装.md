@@ -1,0 +1,820 @@
+# 封装统一的网络请求(Retrofit)
+
+## 1. 简介
+
+|     介绍     |         一个Restful的HTTP网络请求框架（基于Okhttp）          |
+| :----------: | :----------------------------------------------------------: |
+|   **作者**   |                          **Square**                          |
+|   **功能**   | **基于Okhttp & 遵循Restful API设计风格<br />通过注解配置网络请求参数<br />支持同步 & 异步网络请求<br />支持多种数据的解析 & 序列化格式(Gson、Json、XML、Protobuf)<br />提供对RxJava支持** |
+|   **优点**   | **功能强大：支持同步 & 异步、支持多种数据的解析 & 序列化格式、支持RxJava<br />简介易用：通过注解配置网络请求参数、采用大量设计模式简化使用<br />可扩展性好：功能模块高度封装、解耦彻底，如自定义Converters等等** |
+| **应用场景** |            **任何网络请求的需求场景都应优先选择**            |
+
+[github地址](https://square.github.io/retrofit/)
+
+## 2. 导入依赖
+
+```java
+implementation 'com.squareup.okhttp3:okhttp:4.0.1'
+implementation 'com.squareup.retrofit2:retrofit:2.6.0'
+implementation 'com.squareup.retrofit2:converter-scalars:2.6.0'
+    
+//可以选择以下Converters    
+Gson: com.squareup.retrofit2:converter-gson
+Jackson: com.squareup.retrofit2:converter-jackson
+Moshi: com.squareup.retrofit2:converter-moshi
+Protobuf: com.squareup.retrofit2:converter-protobuf
+Wire: com.squareup.retrofit2:converter-wire
+Simple XML: com.squareup.retrofit2:converter-simplexml
+Scalars: com.squareup.retrofit2:converter-scalars
+```
+
+## 3. 添加网络权限
+
+```java
+<uses-permission android:name="android.permission.INTERNET"/>
+```
+
+## 4. 对Retrofit进行封装
+
+### 1. 首先创建请求方法`RestService`接口
+
+其中有`GET、POST、POST_RAW、PUT、PUT_RAW、DELETE、UPLOAD、DOWNLOAD`请求
+
+```java
+public interface RestService {
+
+    @GET
+    Call<String> get(@Url String url, @QueryMap Map<String, Object> params);
+
+    @FormUrlEncoded
+    @POST
+    Call<String> post(@Url String url, @FieldMap Map<String, Object> params);
+
+    @POST
+    Call<String> postRaw(@Url String url, @Body RequestBody body);
+
+    @FormUrlEncoded
+    @PUT
+    Call<String> put(@Url String url, @FieldMap Map<String, Object> params);
+
+    @PUT
+    Call<String> putRaw(@Url String url, @Body RequestBody body);
+
+    @DELETE
+    Call<String> delete(@Url String url, @QueryMap Map<String, Object> params);
+
+    @Streaming
+    @GET
+    Call<ResponseBody> download(@Url String url, @QueryMap Map<String, Object> params);
+
+    @Multipart
+    @POST
+    Call<String> upload(@Url String url, @Part MultipartBody.Part file);
+    
+}
+```
+
+### 2. 创建`HttpMethod`枚举类
+
+创建`HttpMethod`枚举类，定义网络请求的方式，方便以后判断
+
+```java
+public enum HttpMethod {
+    GET,
+    POST,
+    POST_RAW,
+    PUT,
+    PUT_RAW,
+    DELETE,
+    UPLOAD
+}
+```
+
+### 3. Retrofit和Service创建类`RestCreator`
+
+```java
+public class RestCreator {
+
+    /**
+     * 使用单例模式获取请求的参数
+     */
+    private static final class ParamsHolder {
+        public static final HashMap<String, Object> PARAMS = new HashMap<>();
+    }
+
+    public static HashMap<String, Object> getParams() {
+        return ParamsHolder.PARAMS;
+    }
+
+    /**
+     * 使用单例模式创建Retrofit
+     * 获取RestService
+     */
+    public static RestService getRestService() {
+        return RestServiceHolder.REST_SERVICE;
+    }
+
+    /**
+     * 使用单例模式创建Retrofit
+     * RetrofitHolder
+     */
+    private static final class RetrofitHolder {
+        private static final String BASE_URL = StaticFields.BASE_URL;
+        private static final Retrofit RETROFIT_CLIENT = new Retrofit.Builder()
+                .baseUrl(BASE_URL)
+                .client(OkHttpHolder.OK_HTTP_CLIENT)
+                .addConverterFactory(ScalarsConverterFactory.create())
+                .build();
+    }
+
+    /**
+     * 设定其他的一些参数
+     */
+    private static final class OkHttpHolder {
+        private static final int TIME_OUT = 60;
+        private static final OkHttpClient OK_HTTP_CLIENT = new OkHttpClient.Builder()
+                .connectTimeout(TIME_OUT, TimeUnit.SECONDS)
+                .build();
+    }
+
+    /**
+     * 单例模式获取RestService
+     */
+    private static final class RestServiceHolder {
+        private static final RestService REST_SERVICE =
+                RetrofitHolder.RETROFIT_CLIENT.create(RestService.class);
+    }
+}
+```
+
+### 4. 定义网络请求的回调`RestCallback`
+
+```java
+public class RestCallback {
+
+    /**
+     * 请求成功
+     */
+    public interface ISuccess {
+        void onSuccess(String response);
+    }
+
+    /**
+     * 请求错误
+     */
+    public interface IError {
+        void onError(int code, String msg);
+    }
+
+    /**
+     * 请求失败
+     */
+    public interface IFailure {
+        void onFailure();
+    }
+
+    /**
+     * 请求方法，执行请求开始之前和请求完成以后的操作
+     */
+    public interface IRequest {
+        void onRequestStart();
+
+        void onRequestEnd();
+    }
+}
+```
+
+### 5. RestClient的建造者`RestClientBuilder`
+
+```java
+public class RestClientBuilder {
+
+    private String mUrl = null;
+    private static final Map<String, Object> PARAMS = RestCreator.getParams();
+    private RestCallback.IRequest mRequest = null;
+    private RestCallback.ISuccess mSuccess = null;
+    private RestCallback.IFailure mFailure = null;
+    private RestCallback.IError mError = null;
+    private RequestBody mBody = null;
+    //文件上传的参数
+    private File mFile = null;
+    //文件下载的参数
+    private String mDownloadDir = null;
+    private String mExtension = null;
+    private String mName = null;
+
+    //不允许外部的类去直接New这个类，只允许RestClient去new它
+    RestClientBuilder() {
+    }
+
+    //设置Url
+    public final RestClientBuilder url(String url) {
+        this.mUrl = url;
+        return this;
+    }
+
+    //添加请求参数，传入map
+    public final RestClientBuilder params(HashMap<String, Object> params) {
+        PARAMS.putAll(params);
+        return this;
+    }
+
+    //重载，传入键值对
+    public final RestClientBuilder params(String key, Object value) {
+        PARAMS.put(key, value);
+        return this;
+    }
+
+    //上传的文件
+    public final RestClientBuilder file(File file) {
+        this.mFile = file;
+        return this;
+    }
+
+    //要上传文件的路径
+    public final RestClientBuilder file(String filePath) {
+        this.mFile = new File(filePath);
+        return this;
+    }
+
+    //所下载文件存放的目录
+    public final RestClientBuilder dir(String downloadDir) {
+        this.mDownloadDir = downloadDir;
+        return this;
+    }
+
+    //所下载文件的后缀名
+    public final RestClientBuilder extension(String extension) {
+        this.mExtension = extension;
+        return this;
+    }
+
+    //所下载文件的文件名
+    public final RestClientBuilder name(String name) {
+        this.mName = name;
+        return this;
+    }
+
+    //如果传入的是原始数据(json数据)
+    public final RestClientBuilder jsonRaw(String raw) {
+        this.mBody = RequestBody.create(MediaType.parse("application/json;charset=UTF-8"), raw);
+        return this;
+    }
+
+    //网络请求成功的回调
+    public final RestClientBuilder request(RestCallback.IRequest iRequest) {
+        this.mRequest = iRequest;
+        return this;
+    }
+
+    //网络请求成功的回调
+    public final RestClientBuilder success(RestCallback.ISuccess iSuccess) {
+        this.mSuccess = iSuccess;
+        return this;
+    }
+
+    //网络请求失败的回调
+    public final RestClientBuilder failure(RestCallback.IFailure iFailure) {
+        this.mFailure = iFailure;
+        return this;
+    }
+
+    //网络请求错误的回调
+    public final RestClientBuilder error(RestCallback.IError iError) {
+        this.mError = iError;
+        return this;
+    }
+
+    //创建出RestClient
+    public final RestClient build() {
+        return new RestClient(mUrl, PARAMS, mRequest, mSuccess, mFailure, mError, mBody, mFile, mDownloadDir, mExtension, mName);
+    }
+}
+```
+
+### 6. 创建Retrofit需要的Callback，将自定义的callback添加进去
+
+```java
+public class RequestCallbacks implements Callback<String> {
+
+    private final RestCallback.IRequest REQUEST;
+    private final RestCallback.ISuccess SUCCESS;
+    private final RestCallback.IFailure FAILURE;
+    private final RestCallback.IError ERROR;
+
+    public RequestCallbacks(RestCallback.IRequest request, RestCallback.ISuccess success, RestCallback.IFailure failure, RestCallback.IError error) {
+        this.REQUEST = request;
+        this.SUCCESS = success;
+        this.FAILURE = failure;
+        this.ERROR = error;
+    }
+
+    @Override
+    public void onResponse(Call<String> call, Response<String> response) {
+        //请求成功
+        if (response.isSuccessful()) {
+            //call已经执行了
+            if (call.isExecuted()) {
+                if (SUCCESS != null) {
+                    SUCCESS.onSuccess(response.body());
+                }
+            }
+        } else {
+            if (ERROR != null) {
+                ERROR.onError(response.code(), response.message());
+            }
+        }
+    }
+
+    @Override
+    public void onFailure(Call<String> call, Throwable t) {
+        if (FAILURE != null) {
+            FAILURE.onFailure();
+        }
+        if (REQUEST != null) {
+            REQUEST.onRequestEnd();
+        }
+    }
+}
+```
+
+### 7. 下载请求中用到的一些文件操作方法
+
+- 文件操作的一些静态方法
+
+  ```java
+  //格式化的模板
+  private static final String TIME_FORMAT = "_yyyyMMdd_HHmmss";
+  
+  private static final String SDCARD_DIR =
+              Environment.getExternalStorageDirectory().getPath();
+  
+  private static String getTimeFormatName(String timeFormatHeader) {
+      final Date date = new Date(System.currentTimeMillis());
+      //必须要加上单引号
+      final SimpleDateFormat dateFormat = new SimpleDateFormat("'" + timeFormatHeader + "'" + TIME_FORMAT, Locale.getDefault());
+      return dateFormat.format(date);
+  }
+  
+  /**
+   * @param timeFormatHeader 格式化的头(除去时间部分)
+   * @param extension        后缀名
+   * @return 返回时间格式化后的文件名
+   */
+  public static String getFileNameByTime(String timeFormatHeader, String extension) {
+      return getTimeFormatName(timeFormatHeader) + "." + extension;
+  }
+  
+  private static File createDir(String sdcardDirName) {
+      //拼接成SD卡中完整的dir
+      final String dir = SDCARD_DIR + "/" + sdcardDirName + "/";
+      final File fileDir = new File(dir);
+      if (!fileDir.exists()) {
+          fileDir.mkdirs();
+      }
+      return fileDir;
+  }
+  
+  //创建文件
+  public static File createFile(String sdcardDirName, String fileName) {
+      return new File(createDir(sdcardDirName), fileName);
+  }
+  
+  //通过时间创建文件
+  private static File createFileByTime(
+          String sdcardDirName,
+          String timeFormatHeader,
+          String extension
+  ) {
+      final String fileName = getFileNameByTime(timeFormatHeader, extension);
+      return createFile(sdcardDirName, fileName);
+  }
+  
+  /**
+   * 保存输入流到磁盘
+   *
+   * @param is   输入流
+   * @param dir  保存在的文件夹
+   * @param name 保存的文件名
+   * @return 保存好的文件
+   */
+  public static File writeToDisk(InputStream is, String dir, String name) {
+      final File file = FileUtil.createFile(dir, name);
+      BufferedInputStream bis = null;
+      FileOutputStream fos = null;
+      BufferedOutputStream bos = null;
+  
+      try {
+          bis = new BufferedInputStream(is);
+          fos = new FileOutputStream(file);
+          bos = new BufferedOutputStream(fos);
+  
+          byte data[] = new byte[1024 * 4];
+  
+          int count;
+          while ((count = bis.read(data)) != -1) {
+              bos.write(data, 0, count);
+          }
+  
+          bos.flush();
+          fos.flush();
+  
+  
+      } catch (IOException e) {
+          e.printStackTrace();
+      } finally {
+          try {
+              if (bos != null) {
+                  bos.close();
+              }
+              if (fos != null) {
+                  fos.close();
+              }
+              if (bis != null) {
+                  bis.close();
+              }
+              is.close();
+          } catch (IOException e) {
+              e.printStackTrace();
+          }
+      }
+  
+      return file;
+  }
+  
+  /**
+   * 保存输入流到磁盘
+   *
+   * @param is        输入流
+   * @param dir       保存的文件夹
+   * @param prefix    文件前缀
+   * @param extension 文件后缀
+   * @return 下载完成的文件
+   */
+  public static File writeToDisk(InputStream is, String dir, String prefix, String extension) {
+      final File file = FileUtil.createFileByTime(dir, prefix, extension);
+      BufferedInputStream bis = null;
+      FileOutputStream fos = null;
+      BufferedOutputStream bos = null;
+  
+      try {
+          bis = new BufferedInputStream(is);
+          fos = new FileOutputStream(file);
+          bos = new BufferedOutputStream(fos);
+  
+          byte data[] = new byte[1024 * 4];
+  
+          int count;
+          while ((count = bis.read(data)) != -1) {
+              bos.write(data, 0, count);
+          }
+  
+          bos.flush();
+          fos.flush();
+  
+  
+      } catch (IOException e) {
+          e.printStackTrace();
+      } finally {
+          try {
+              if (bos != null) {
+                  bos.close();
+              }
+              if (fos != null) {
+                  fos.close();
+              }
+              if (bis != null) {
+                  bis.close();
+              }
+              is.close();
+          } catch (IOException e) {
+              e.printStackTrace();
+          }
+      }
+  
+      return file;
+  }
+  ```
+
+- `DownloadHandler`类
+
+  ```java
+  public class DownloadHandler {
+  
+      private final String URL;
+      private static final HashMap<String, Object> PARAMS = RestCreator.getParams();
+      private final RestCallback.IRequest REQUEST;
+      private final RestCallback.ISuccess SUCCESS;
+      private final RestCallback.IFailure FAILURE;
+      private final RestCallback.IError ERROR;
+      private final String DOWNLOAD_DIR;
+      private final String EXTENSION;
+      private final String NAME;
+  
+      public DownloadHandler(String url,
+                             RestCallback.IRequest request,
+                             RestCallback.ISuccess success,
+                             RestCallback.IFailure failure,
+                             RestCallback.IError error,
+                             String downloadDir,
+                             String extension,
+                             String name
+      ) {
+          this.URL = url;
+          this.REQUEST = request;
+          this.SUCCESS = success;
+          this.FAILURE = failure;
+          this.ERROR = error;
+          this.DOWNLOAD_DIR = downloadDir;
+          this.EXTENSION = extension;
+          this.NAME = name;
+      }
+  
+      public final void handleDownload() {
+          if (REQUEST != null) {
+              REQUEST.onRequestStart();
+          }
+          RestCreator.getRestService().download(URL, PARAMS)
+                  .enqueue(new Callback<ResponseBody>() {
+                      @Override
+                      public void onResponse(Call<ResponseBody> call, Response<ResponseBody> response) {
+                          if (response.isSuccessful()) {
+                              final ResponseBody responseBody = response.body();
+  
+                              final SaveFileTask task = new SaveFileTask(REQUEST, SUCCESS, FAILURE, ERROR);
+                              //以线程池的形式执行
+                              task.executeOnExecutor(AsyncTask.THREAD_POOL_EXECUTOR, DOWNLOAD_DIR, EXTENSION, NAME, responseBody);
+                              //这里一定要注意判断，否则文件下载不全
+                              if (task.isCancelled()) {
+                                  if (REQUEST != null) {
+                                      REQUEST.onRequestEnd();
+                                  }
+                              }
+                          } else {
+                              if (ERROR != null) {
+                                  ERROR.onError(response.code(), response.message());
+                              }
+                          }
+                      }
+  
+                      @Override
+                      public void onFailure(Call<ResponseBody> call, Throwable t) {
+                          if (FAILURE != null) {
+                              FAILURE.onFailure();
+                          }
+                      }
+                  });
+      }
+  }
+  ```
+
+- `SaveFileTask`类
+
+  ```java
+  public class SaveFileTask extends AsyncTask<Object, Void, File> {
+  
+      private final RestCallback.IRequest REQUEST;
+      private final RestCallback.ISuccess SUCCESS;
+      private final RestCallback.IFailure FAILURE;
+      private final RestCallback.IError ERROR;
+  
+      public SaveFileTask(RestCallback.IRequest request,
+                          RestCallback.ISuccess success,
+                          RestCallback.IFailure failure,
+                          RestCallback.IError error
+      ) {
+          this.REQUEST = request;
+          this.SUCCESS = success;
+          this.FAILURE = failure;
+          this.ERROR = error;
+      }
+  
+      @Override
+      protected File doInBackground(Object... objects) {
+          String downloadDir = (String) objects[0];
+          String extension = (String) objects[1];
+          String name = (String) objects[2];
+          final ResponseBody body = (ResponseBody) objects[3];
+          final InputStream is = body.byteStream();
+          if (downloadDir == null || downloadDir.equals("")) {
+              downloadDir = "download_dir";
+          }
+          if (extension == null || extension.equals("")) {
+              extension = "";
+          }
+          if (name == null || name.equals("")) {
+              return FileUtil.writeToDisk(is, downloadDir, extension.toUpperCase(), extension);
+          } else {
+              return FileUtil.writeToDisk(is, downloadDir, name);
+          }
+      }
+  
+      @Override
+      protected void onPostExecute(File file) {
+          super.onPostExecute(file);
+          if (SUCCESS != null) {
+              SUCCESS.onSuccess(file.getPath());
+          }
+          if (REQUEST != null) {
+              //执行请求结束后的操作
+              REQUEST.onRequestEnd();
+          }
+      }
+  }
+  ```
+
+### 8. 实现RestClient
+
+```java
+public class RestClient {
+
+    //创建RestClient需要的一些参数
+    private final String URL;
+    private static final HashMap<String, Object> PARAMS = RestCreator.getParams();
+    private final RestCallback.IRequest REQUEST;
+    private final RestCallback.ISuccess SUCCESS;
+    private final RestCallback.IFailure FAILURE;
+    private final RestCallback.IError ERROR;
+    private final RequestBody BODY;
+    private final File FILE;
+    private final String DOWNLOAD_DIR;
+    private final String EXTENSION;
+    private final String NAME;
+
+    public RestClient(String url,
+                      Map<String, Object> params,
+                      RestCallback.IRequest request,
+                      RestCallback.ISuccess success,
+                      RestCallback.IFailure failure,
+                      RestCallback.IError error,
+                      RequestBody body,
+                      File file,
+                      String downloadDir,
+                      String extension,
+                      String name) {
+        this.URL = url;
+        PARAMS.putAll(params);
+        this.REQUEST = request;
+        this.SUCCESS = success;
+        this.FAILURE = failure;
+        this.ERROR = error;
+        this.BODY = body;
+        this.FILE = file;
+        this.DOWNLOAD_DIR = downloadDir;
+        this.EXTENSION = extension;
+        this.NAME = name;
+    }
+
+    //建造者模式构建RestClient
+    public static RestClientBuilder builder() {
+        return new RestClientBuilder();
+    }
+
+    //具体的请求，根据method判断
+    private void request(HttpMethod method) {
+        final RestService service = RestCreator.getRestService();
+        Call<String> call = null;
+
+        if (REQUEST != null) {
+            REQUEST.onRequestStart();
+        }
+
+        switch (method) {
+            case GET:
+                call = service.get(URL, PARAMS);
+                break;
+            case POST:
+                call = service.post(URL, PARAMS);
+                break;
+            case POST_RAW:
+                call = service.postRaw(URL, BODY);
+                break;
+            case PUT:
+                call = service.put(URL, PARAMS);
+                break;
+            case PUT_RAW:
+                call = service.putRaw(URL, BODY);
+                break;
+            case DELETE:
+                call = service.delete(URL, PARAMS);
+                break;
+            case UPLOAD:
+                //文件上传
+                final RequestBody requestBody =
+                        RequestBody.create(MediaType.parse(MultipartBody.FORM.toString()), FILE);
+                final MultipartBody.Part body =
+                        MultipartBody.Part.createFormData("file", FILE.getName(), requestBody);
+                call = RestCreator.getRestService().upload(URL, body);
+                break;
+            default:
+                break;
+        }
+
+        if (call != null) {
+            call.enqueue(getRequestCallback());
+        }
+    }
+
+    private Callback<String> getRequestCallback() {
+        return new RequestCallbacks(
+                REQUEST,
+                SUCCESS,
+                FAILURE,
+                ERROR
+        );
+    }
+
+    //GET请求
+    public final void get() {
+        request(HttpMethod.GET);
+    }
+
+    //GET请求
+    public final void post() {
+        if (BODY == null) {
+            request(HttpMethod.POST);
+        } else {
+            if (!PARAMS.isEmpty()) {
+                throw new RuntimeException("Params must be null!");
+            }
+            request(HttpMethod.POST_RAW);
+        }
+    }
+
+    //GET请求
+    public final void put() {
+        if (BODY == null) {
+            request(HttpMethod.PUT);
+        } else {
+            if (!PARAMS.isEmpty()) {
+                throw new RuntimeException("Params must be null!");
+            }
+            request(HttpMethod.PUT_RAW);
+        }
+
+    }
+
+    //GET请求
+    public final void delete() {
+        request(HttpMethod.DELETE);
+    }
+
+    //文件上传
+    public final void upload() {
+        request(HttpMethod.UPLOAD);
+    }
+
+    //文件下载
+    public final void download() {
+        new DownloadHandler(
+                URL, REQUEST, SUCCESS, FAILURE,
+                ERROR, DOWNLOAD_DIR, EXTENSION, NAME
+        ).handleDownload();
+    }
+}
+```
+
+## 5. 使用RestClient进行网络请求
+
+```java
+RestClient.builder()
+        //如果这里是完整的地址，那么Retrofit中的baseUrl就没有作用
+        //如果这里不是完整地址，请求地址为baseUrl+url
+        .url("http://10.0.2.2/Test/user_profile.json")
+        //请求参数
+        .params("name", "dankai")
+        //请求成功回调
+        .success(new RestCallback.ISuccess() {
+            @Override
+            public void onSuccess(String response) {
+                //请求成功后的操作
+            }
+        })
+        //请求错误回调
+        .error(new RestCallback.IError() {
+            @Override
+            public void onError(int code, String msg) {
+                //请求错误后的操作
+                Toast.makeText(MainActivity.this, "code:" + code + "message" + msg, Toast.LENGTH_SHORT).show();
+            }
+        })
+        //请求失败回调
+        .failure(new RestCallback.IFailure() {
+            @Override
+            public void onFailure() {
+                //请求失败后的操作
+                Toast.makeText(MainActivity.this, "失败", Toast.LENGTH_SHORT).show();
+            }
+        })
+        .build()
+        .get();
+```
+
+
+
+
+
+
+
+
+
