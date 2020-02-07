@@ -28,7 +28,7 @@ dependencies {
 
 例如阿里巴巴矢量图标库
 
-![1566133654493](E:\MyDocument\Document\My-Note\Images\1566133654493.png)
+![](http://blog.img.wangdankai.cn/1566133654493.png)
 
 将下载下来的ttf文件放到src/main/assets文件夹内
 
@@ -57,7 +57,7 @@ dependencies {
 
 - 创建`FontIcons`枚举类，使它实现`Icon`接口
 
-  ![1566134920072](E:\MyDocument\Document\My-Note\Images\1566134920072.png)
+  ![](http://blog.img.wangdankai.cn/1566134920072.png)
 
 ```java
 public enum FontIcons implements Icon {
@@ -123,4 +123,4 @@ public class MyApplication extends Application {
 
 ## 7. 显示结果
 
-![1566136246824](E:\MyDocument\Document\My-Note\Images\1566136246824.png)
+![](http://blog.img.wangdankai.cn/1566136246824.png)

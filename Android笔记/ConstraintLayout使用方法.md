@@ -10,7 +10,7 @@
 
   相对定位是部件对于另一个位置的约束，如下面这个例子
 
-  ![1562585209739](E:\MyDocument\Document\My-Note\Images\1.png)
+  ![](http://blog.img.wangdankai.cn/1.png)
 
   `TextView2`在`TextView1`的右边，所以在`TextView2`里面有`...toRightof="@id/text1"`
 

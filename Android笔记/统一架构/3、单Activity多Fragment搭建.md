@@ -205,7 +205,7 @@ public class TestDelegate extends BaseDelegate {
 
 点击测试进入TestFragment界面
 
-<img src="E:\MyDocument\Document\My-Note\Images\Screenshot_1566205933.png" style="zoom:100" />
+![](http://blog.img.wangdankai.cn/Screenshot_1566205933.png)
 
-<img src="E:\MyDocument\Document\My-Note\Images\Screenshot_1566205943.png" style="zoom:100" />
+![](http://blog.img.wangdankai.cn/Screenshot_1566205943.png)
 
