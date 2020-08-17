@@ -32,7 +32,15 @@ onDestroy()表明当前Activity正在被销毁，在这里面可以做一些回�
 
 ### 3.android进程优先级
 
-`前台`/`可见`/`服务`/`后台`/`空`
+`前台`/`可见`/`服务`/`后台`/`空` 
+
+
+
+----
+
+-----
+
+
 
 # Fragment面试详解
 
@@ -59,6 +67,12 @@ Fragment在使用频率上不输于其它四大组件，同时拥有自己的生
 
 而FragmentPagerAdapter在切换的时候，并没有回收内存，它只是把UI分离，所以适合页面比较少的情况。
 
+
+
+------
+
+
+
 ## 二、Fragment的生命周期
 
 ### 1. Fragment生命周期
@@ -69,6 +83,12 @@ Fragment在使用频率上不输于其它四大组件，同时拥有自己的生
 
 <img src="http://blog.img.wangdankai.cn/20200423182040.png" style="zoom:80%;" />
 
+
+
+-------
+
+
+
 ## 三、Fragment之间的通信
 
 ### 1. 在Fragment中调用Activity中的方法  getActivity
@@ -77,9 +97,23 @@ Fragment在使用频率上不输于其它四大组件，同时拥有自己的生
 
 ### 3. 在Fragment中调用Fragment中的方法 findFragmentById
 
+
+
+-----
+
+
+
 ## 四、Fragment管理器：FragmentManager
 
-**replace、add、remove**
+**`replace、add、remove`**
+
+
+
+----
+
+-----
+
+
 
 # Service面试详解
 
@@ -107,6 +141,12 @@ Service是Android中的一种特殊机制，Service是运行在主线程，绝�
 
 音乐、天气预报数据统计啊这些的要用Service
 
+
+
+-----
+
+
+
 ## 二、启动Service的两种方式以及区别
 
 ### 1.startService
@@ -121,6 +161,14 @@ Service是Android中的一种特殊机制，Service是运行在主线程，绝�
 1. 创建BindService服务端，继承自Service并在类中，创建一个实现IBinder接口的实例对象并提供公共方法给客户端调用
 2. 从onBind()回调方法返回此Binder实例
 3. 在客户端中，从onServiceConnected()回调方法接收Binder，并使用提供的方法调用绑定服务。
+
+
+
+----
+
+----
+
+
 
 # Broadcast Receiver面试详解
 
@@ -144,6 +192,12 @@ Service是Android中的一种特殊机制，Service是运行在主线程，绝�
 - System Broadcast: Context.sendOrderedBroadcast
 - Local Broadcast: 只在自身APP内传播
 
+
+
+-----
+
+
+
 ## 二、实现广播-receiver
 
 ### 1. 静态注册：注册完成就一直运行
@@ -158,6 +212,12 @@ Service是Android中的一种特殊机制，Service是运行在主线程，绝�
 
 会受activity生命周期的影响，activity销毁了，广播接收者也就失效了
 
+
+
+-----
+
+
+
 ## 三、内部实现机制
 
 1. 自定义广播接收者BroadcastReceiver，并复写onReceive()方法;
@@ -165,6 +225,14 @@ Service是Android中的一种特殊机制，Service是运行在主线程，绝�
 3. 广播发送者通过Binder机制向AMS发送广播;
 4. AMS查找符合相应条件(IntentFilter/Permission等)的BroadcastReceiver，将广播发送到BroadcaseReceiver(一般情况下是Activity)相应的消息循环队列中;
 5. 消息循环队列执行拿到此广播，回调BroadcastReceiver中的onReceive()方法
+
+
+
+-----
+
+----
+
+
 
 # Handler面试详解
 
@@ -174,6 +242,12 @@ Service是Android中的一种特殊机制，Service是运行在主线程，绝�
 
 1. 可以让对应的`Message`和`Runnable`在未来的某个时间点进行相应处理
 2. 让自己想要处理的耗时操作放在子线程，让更新UI的操作放在主线程
+
+
+
+-----
+
+
 
 ## 二、handler的使用方法
 
@@ -188,11 +262,23 @@ Service是Android中的一种特殊机制，Service是运行在主线程，绝�
     - 执行完成，获取Message类，为Message的what、arg1、arg2或obj等参数赋相应的值
     - 最后执行`handler.sendMessage(msg)`方法
 
+
+
+-----
+
+
+
 ## 三、handler机制的原理
 
 <img src="http://blog.img.wangdankai.cn/20200506102030.png" style="zoom:67%;" />
 
 <img src="http://blog.img.wangdankai.cn/20200506102147.png" style="zoom:67%;" />
+
+
+
+-----
+
+
 
 ## 四、handler引起的内存泄漏以及解决办法
 
@@ -204,6 +290,14 @@ Service是Android中的一种特殊机制，Service是运行在主线程，绝�
 - 把handler改为静态内部类
 - mHandler.removeCallback()
 
+
+
+-----
+
+----
+
+
+
 # AsyncTask面试详解
 
 ## 一、什么是AsyncTask
@@ -211,6 +305,12 @@ Service是Android中的一种特殊机制，Service是运行在主线程，绝�
 它本质上就是一个封装了线程池和handler的异步框架
 
 AsyncTask它本质上封装了线程池和handler，这个AsyncTask框架主要是用来执行异步任务的，所以说由于它内部集成了handler，所以说它能够方便的在UI线程和工作线程也就是子线程当中灵活的切换
+
+
+
+------
+
+
 
 ## 二、AsyncTask的使用方法
 
@@ -282,6 +382,10 @@ new UpdateInfoAsyncTask(((TextView)findViewById(R.id.text_view)),((ProgressBar)f
 
 
 
+-----
+
+
+
 ## 三、AsyncTask内部原理
 
 1. AsyncTask的本质是一个静态的线程池，AsyncTask派生出的子类可以实现不同的异步任务，这些任务都是提交到静态的线程池中执行。
@@ -289,6 +393,12 @@ new UpdateInfoAsyncTask(((TextView)findViewById(R.id.text_view)),((ProgressBar)f
 3. 当任务状态改变之后，工作线程会向UI线程发送消息，AsyncTask内部的InternalHandler响应这些消息，并调用相关的回调函数
 
 一句话概括：内部封装了线程池，通过Handler来发送消息，在UI线程和子线程当中传递
+
+
+
+------
+
+
 
 ## 四、AsyncTask的注意事项
 
@@ -306,11 +416,25 @@ new UpdateInfoAsyncTask(((TextView)findViewById(R.id.text_view)),((ProgressBar)f
 
 由于屏幕旋转或者后台被杀，导致AsyncTask中的弱Activity引用无效，导致结果丢失
 
+
+
+----
+
+
+
 ### 四、并行or串行
 
 默认使用的是串行，如果要使用并行，则调用`executeOnExecutor`方法
 
 串行较稳定一些，并行不够稳定
+
+
+
+-----
+
+-----
+
+
 
 # View的绘制机制
 
@@ -319,6 +443,12 @@ new UpdateInfoAsyncTask(((TextView)findViewById(R.id.text_view)),((ProgressBar)f
 `measure->layout->draw`
 
 树的递归过程
+
+
+
+----
+
+
 
 ## 二、measure
 
@@ -344,11 +474,23 @@ new UpdateInfoAsyncTask(((TextView)findViewById(R.id.text_view)),((ProgressBar)f
 
     最终调用setMeasureDimension()，必须被调用，否则会调异常
 
+
+
+----
+
+
+
 ## 三、layout
 
 树的递归过程
 
 <img src="http://blog.img.wangdankai.cn/20200506111650.png" style="zoom:67%;" />
+
+
+
+----
+
+
 
 ## 四、draw
 
@@ -362,19 +504,45 @@ new UpdateInfoAsyncTask(((TextView)findViewById(R.id.text_view)),((ProgressBar)f
 
     当布局发生变化时，会调用此方法
 
+
+
+-----
+
+----
+
+
+
 # ListView面试详解
 
 ## 一、什么是ListView
 
 ListView就是一个数据集合以动态滚动的方式展示到用户界面上的View
 
+
+
+----
+
+
+
 ## 二、ListView适配器模式
 
 <img src="http://blog.img.wangdankai.cn/20200506114325.png" style="zoom:50%;" />
 
+
+
+----
+
+
+
 ## 三、ListView的recycleBin机制
 
 <img src="http://blog.img.wangdankai.cn/20200506120407.png" style="zoom:67%;" />
+
+
+
+----
+
+
 
 ## 四、ListView的优化
 
