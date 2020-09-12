@@ -10,7 +10,11 @@
    defaults delete com.apple.dock; killall Dock
    ```
 
-2. 显示系统信息
+2. 安装HomeBrew
+
+   
+   
+3. 显示系统信息
 
    ```
    brew install archey
