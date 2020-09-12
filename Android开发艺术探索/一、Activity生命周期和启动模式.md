@@ -1,0 +1,4 @@
+在与用户交互的过程中，Activity是最常用的，所以第一章就详细介绍一下Activity。
+
+本章主要包括Activity的生命周期、启动模式以及IntentFilter的匹配规则分析
+
