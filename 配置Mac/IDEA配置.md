@@ -20,7 +20,27 @@
 
 <img src="http://blog.img.wangdankai.cn/image-20200912144843121.png" alt="image-20200912144843121" style="zoom:50%;" />
 
-## 3. 配置插件
+## 3. 设置自动补全
 
-- 
+<img src="http://blog.img.wangdankai.cn/image-20200913161416429.png" alt="image-20200913161416429" style="zoom:50%;" />
+
+## 4. 配置插件
+
+- Alibaba
+- Background Image Plus
+- CodeGlance
+- Material Theme UI
+- Translation
+
+## 5. 设置字体
+
+使用Material Theme UI之后设置字体
+
+## 6. 自动导包和去包
+
+<img src="http://blog.img.wangdankai.cn/image-20200915140231890.png" alt="image-20200915140231890" style="zoom:50%;" />
+
+## 7. 调节自动注释
+
+<img src="http://blog.img.wangdankai.cn/image-20200915140622238.png" alt="image-20200915140622238" style="zoom:50%;" />
 
