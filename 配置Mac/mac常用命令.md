@@ -30,5 +30,23 @@
     export PATH="$PATH:环境的地址"
     ```
 
-5. 
+5. 设置默认Python3版本
+
+    先执行`which python3`，获得Python3的路径
+
+    例如`/usr/local/bin/python3`
+
+    然后`vim ~/.zshrc`
+
+    在最后插入
+
+    ```shell
+    alias python="/usr/local/bin/python3"
+    ```
+
+    然后执行
+
+    `source ~/.zshrc`
+
+6. 
 
