@@ -1,3 +1,9 @@
+## 安装V2rayU
+
+订阅链接：https://doubledou.win/link/u5agDinK3eTEKLbQ?client=v2
+
+安装`Notion`
+
 ## 1. 让dock更顺滑
 
 ```shell
