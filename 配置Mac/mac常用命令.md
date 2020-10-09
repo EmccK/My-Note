@@ -26,7 +26,7 @@ defaults delete com.apple.dock; killall Dock
 
 ```shell
 brew install archey
-brew install neofecth
+brew install neofetch
 ```
 
 然后执行`archey/neofetch`命令
@@ -81,4 +81,8 @@ alias python="/usr/local/bin/python3"
 5. 项目管理
 
     1. 初始化，在要管理的项目目录下执行`git init`命令，这时会自动生成`.git`文件夹，这个就是本地的版本库。
-    2. 
+
+## 7. 安装文件已损坏
+
+`sudo xattr -d com.apple.quarantine /Applications/xxxx.app`
+
