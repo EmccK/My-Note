@@ -4,10 +4,15 @@
 
 主要分为三种情况：
 
+---
+
 - `LayoutManager`为空
   - 直接调用`RecyclerView`的`defaultonMeasure`方法。
   - `defaultOnMeasure`方法中：首先调用`LayoutManager`的`chooseSize`方法计算，然后调用`setMeasuredDismission`方法设置宽高。
   - `chooseSize`通过`RecyclerView`的`MeasureSpec`来计算宽高。
+
+----
+
 - `LayoutManager`不为空，并开启了自动测量
   - 这种情况下主要有**三个方法**：`dispatchLayoutStep1`、`dispatchLayoutStep2`、`dispatchLayoutStep3`
   - 然后`mState.mLayoutStep`的**三个值**对应三个方法：`State.STEP_START`、`State.STEP_LAYOUT`、`State.STEP_ANIMATION`
@@ -20,6 +25,9 @@
       - `dispatchLayoutStep2`：测量和布局子类。**1.**首先调用`Adapter`的`getItemCount`获取到子类的数量；**2.**调用`LayoutManager`的`onLayoutChildren`方法，系统的`onLayoutChildren`方法为空，即需要子类自己去实现`onLayoutChildren`方法，自己布局子`View`的位置。
       - `dispatchLayoutStep3`：主要作用就是执行第一步中保存的动画信息。
     - 如果需要二次测量的话，会再次执行`dispatchLayoutStep2`方法。
+
+-----
+
 - `LayoutManager`不为空，未开启自动测量
   - 如果设置了`mHasFixedSize`为`true`，则直接调用`LayoutManager`的`OnMeasure`方法
   - 如果为`false`，并且此时有数据更新的话，先处理数据更新事务，再调用`LayoutManager`的`onMeasure`方法
