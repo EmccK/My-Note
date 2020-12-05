@@ -12,6 +12,6 @@
 
 ```
 fastboot flash recovery 文件名.img
-fastboot boot 文件名.img
+fastboot flash boot 文件名.img
 ```
 
