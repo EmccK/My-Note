@@ -28,3 +28,29 @@
 - 看看有哪些可扩展的设计
 - 分析下运用了哪些设计模式
 
+
+
+
+
+
+
+首先`Retrofit`是使用`Builder`建造者模式创建的，在`build`方法中实例化各种参数，然后在`Retrofit`的`create`方法中使用`动态代理`将传入的`Java.class`对象转换成一个是实例
+
+- 首先创建`ServiceMethod`对象
+- 根据`ServiceMethod`对象创建`OkHttpCall`对象
+- `ServiceMethod.callAdapter.adapt(okHttpCall)`返回`CallAdaper`对象
+
+
+
+## Retrofit使用
+
+1. 创建一个Retrofit对象，是通过建造者模式来创建的
+2. 通过Retrofit.create()方法，将我们定义的接口转化成接口实例并使用接口的方法
+3. 最终的网络请求调用的都是okHttpCall使用
+
+## Glide源码分析
+
+1. with方法，实例化requestManager，实现生命周期的方法，是所有图片请求的管理类
+2. load方法，对一些参数进行赋值
+3. into方法，最终使用的还是线程池进行处理
+
