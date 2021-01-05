@@ -86,3 +86,12 @@ alias python="/usr/local/bin/python3"
 
 `sudo xattr -d com.apple.quarantine /Applications/xxxx.app`
 
+## 8. Mac中的脚本编辑器
+
+~~~javascript
+tell application "Finder"
+	open folder "Mac OS:Users:dankai"
+end tell
+~~~
+
+使用这个脚本是打开Mac OS盘符下的Users/dankai文件夹
