@@ -16,10 +16,22 @@ defaults write com.apple.Dock autohide-delay -float 0 && killall Dock
 defaults delete com.apple.dock; killall Dock
 ```
 
-## 2. 安装HomeBrew
+## 2. 安装HomeBrew以及常用命令
 
 ```shell
 /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/master/install.sh)"
+
+
+安装软件：brew install 软件名，例：brew install wget
+搜索软件：brew search 软件名，例：brew search wget
+卸载软件：brew uninstall 软件名，例：brew uninstall wget
+更新所有软件：brew update
+更新具体软件：brew upgrade 软件名 ，例：brew upgrade git
+显示已安装软件：brew list
+查看软件信息：brew info／home 软件名 ，例：brew info git ／ brew home git
+显示包依赖：brew reps
+显示安装的服务：brew services list
+安装服务启动、停止、重启：brew services start/stop/restart serverName
 ```
 
 ## 3. 显示系统信息
