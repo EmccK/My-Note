@@ -107,3 +107,11 @@ end tell
 ~~~
 
 使用这个脚本是打开Mac OS盘符下的Users/dankai文件夹
+
+## 9.查看硬盘读写
+
+```shell
+brew install smartmontools
+smartctl -a disk0
+```
+
